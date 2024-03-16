@@ -1,0 +1,190 @@
+package main
+
+import (
+	"crypto/rand"
+	"encoding/base64"
+	"net/http"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+)
+
+var (
+    db *gorm.DB
+)
+
+type User_Register struct {
+    FirstName   string `json:"first_name"`
+    LastName    string `json:"last_name"`
+    MiddleName  string `json:"middle_name"`
+    Team        string `json:"team"`
+    GroupName   string `json:"group_name"`
+    Login       string `json:"login"`
+    Password    string `json:"password"`
+    Role        string `json:"role"`
+    AccessToken string `json:"-"`
+}
+
+type User struct {
+	ID          *uint  `gorm:"primary_key" binding:"-"`
+    FirstName   string `json:"first_name"`
+    LastName    string `json:"last_name"`
+    MiddleName  string `json:"middle_name"`
+    Team        string `json:"team"`
+    GroupName   string `json:"group_name"`
+    Login       string `json:"login"`
+    Password    string `json:"password"`
+    Role        string `json:"role"`
+    AccessToken string `json:"-"`
+}
+type Skill struct {
+    ID   uint `gorm:"primary_key"`
+    Name string
+}
+type Task_Plan struct {
+    Title           string    `json:"title" binding:"required"`
+    Description     string    `json:"description"`
+    Deadline        string    `json:"deadline"`
+    CreatorID       uint      `json:"creator_id"`
+    AssigneeID      uint      `json:"assignee_id"` // Удалите binding:"required"
+    Cost            float64   `json:"cost"`
+    IsRecurring     bool      `json:"is_recurring"`
+    RecurrenceLimit int       `json:"recurrence_limit"`
+    TimesCompleted  int       `json:"times_completed"`
+	AccessToken string `json:"access_token"`
+    Skills          []Skill   `gorm:"many2many:task_skills;" json:"skills"`
+}
+
+type Task struct {
+    Title           string    `json:"title" binding:"required"`
+    Description     string    `json:"description"`
+    Deadline        string    `json:"deadline"`
+    CreatorID       uint      `json:"creator_id"`
+    AssigneeID      uint      `json:"assignee_id"`
+    Cost            float64   `json:"cost"`
+    IsRecurring     bool      `json:"is_recurring"`
+    RecurrenceLimit int       `json:"recurrence_limit"`
+    TimesCompleted  int       `json:"times_completed"`
+    Skills          []Skill   `gorm:"many2many:task_skills;" json:"skills"`
+}
+
+type Claims struct {
+    UserID uint `json:"user_id"`
+    jwt.StandardClaims
+}
+
+func setupRouter() *gin.Engine {
+    r := gin.Default()
+
+    r.POST("/api/v2/register", createUser)
+	r.POST("/api/v2/createTask", createTask)
+    return r
+}
+func generateRandomString(length int) (string, error) {
+    bytes := make([]byte, length)
+    if _, err := rand.Read(bytes); err != nil {
+        return "", err
+    }
+    return base64.URLEncoding.EncodeToString(bytes), nil
+}
+func createUser(c *gin.Context) {
+    var newUser User
+    if err := c.BindJSON(&newUser); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+	
+	randomToken, err := generateRandomString(32)
+	if _, err := generateRandomString(32); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+    // Generate JWT token
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+        "user_id": randomToken,
+    })
+
+    tokenString, err := token.SignedString([]byte("your-secret-key"))
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+        return
+    }
+
+    // Save access token to the user
+    newUser.AccessToken = tokenString
+
+    // Create user in database
+    if err := db.Create(&newUser).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"token": tokenString})
+}
+func createTask(c *gin.Context) {
+    var newTask Task_Plan
+    if err := c.BindJSON(&newTask); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Извлекаем access_token из JSON-запроса
+    accessToken := newTask.AccessToken
+
+    // Находим пользователя по access_token в базе данных
+    var creator User
+    if err := db.Where("access_token = ?", accessToken).First(&creator).Error; err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid access token"})
+        return
+    }
+
+//deadlineStr := newTask.Deadline + "T00:00:00Z"
+//deadline, err := time.Parse("2006-01-02T15:04:05Z07:00", deadlineStr)
+/*if err != nil {
+    c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid deadline format"})
+    return
+}*/
+	
+
+    // Преобразуем указатель creator.ID в uint
+    creatorID := *creator.ID
+
+    // Создаем новое задание в базе данных
+    task := Task{
+        Title:          newTask.Title,
+        Description:    newTask.Description,
+        Deadline:       newTask.Deadline,
+        CreatorID:      creatorID,
+        AssigneeID:     newTask.AssigneeID,
+        Cost:           newTask.Cost,
+        IsRecurring:    newTask.IsRecurring,
+        RecurrenceLimit: newTask.RecurrenceLimit,
+        TimesCompleted: newTask.TimesCompleted,
+        Skills: newTask.Skills,
+    }
+
+    if err := db.Create(&task).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Task created successfully", "task": task})
+}
+
+
+func main() {
+    var err error
+    db, err = gorm.Open("postgres", "host=127.0.0.1 dbname=vkqe user=postgres password=12041982 sslmode=disable")
+    if err != nil {
+        panic("failed to connect database")
+    }
+    defer db.Close()
+
+    db.AutoMigrate(&User{})
+
+    r := setupRouter()
+    r.Run(":8080")
+}
