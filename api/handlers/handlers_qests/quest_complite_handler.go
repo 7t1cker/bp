@@ -126,6 +126,6 @@ func MarkQuestAsDone(db *sql.DB) gin.HandlerFunc {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
     }
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "Здача продлена", "pr" : percentage})
+		c.JSON(http.StatusOK, gin.H{"message": "Здача выполнена", "pr" : percentage})
 	}
 }

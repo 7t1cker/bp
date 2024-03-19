@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     division_id INTEGER REFERENCES divisions(id),
     group_id INTEGER REFERENCES groups(id),
     skill_tasks JSONB,
-    balance NUMERIC,
+    balance NUMERIC DEFAULT 0.0,
     status VARCHAR CHECK (status IN ('работает', 'перерыв', 'не работает')),
     access_token VARCHAR,
     login VARCHAR UNIQUE,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS assignee_quests (
     recurrence INTEGER,
     creation_timestamp TIMESTAMP,
     closing_timestamp TIMESTAMP,
-    done BOOLEAN,
+    done BOOLEAN DEFAULT FALSE,
     quest_type_id INTEGER
 );
 

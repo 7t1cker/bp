@@ -54,7 +54,7 @@ func getAssignedTasksForTask(db *sql.DB, taskID int) ([]models.AssignedQuest, er
     var assignedTasks []models.AssignedQuest
     for rows.Next() {
         var assignedTask models.AssignedQuest
-        err := rows.Scan(&assignedTask.ID, &assignedTask.AssigneeID, &assignedTask.QuestID,  &assignedTask.RecurrenceLimit, &assignedTask.CreationTimestamp, &assignedTask.ClosingTimestamp, &assignedTask.Done)
+        err := rows.Scan(&assignedTask.ID, &assignedTask.AssigneeID, &assignedTask.QuestID, &assignedTask.RecurrenceLimit, &assignedTask.CreationTimestamp, &assignedTask.ClosingTimestamp, &assignedTask.Done, &assignedTask.QuestsType)
         if err != nil {
             return nil, err
         }
