@@ -1,0 +1,1023 @@
+openapi: 3.0.0
+info:
+  title: API Test
+  description: " Важно что нужно сначала создать скилы группу и подразделение для добавления юзера. `тестовое апи`"
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8000/api/v2
+paths:
+  /users:
+    post:
+      summary: Создание пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user_id:
+                    type: integer
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /login:
+    post:
+      summary: Получение токена
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /logout:
+    post:
+      summary: дезактивация токена
+      parameters:
+        - name: Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /users/{user_id}/assigned_quests:
+    get:
+      summary: Просмотр выполненых заданий по id
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Assigned quests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assigned_quests:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AssignedQuestWithTaskInfo"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /user:
+    get:
+      summary: Просмотр информации о пользователе
+      parameters:
+        - name: Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /divisions:
+    post:
+      summary: Создать новое подразделение
+      description: Создает новое подразделение с указанным именем
+      tags:
+        - divisions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                division_name:
+                  type: string
+      responses:
+        "201":
+          description: Подразделение успешно создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  division_id:
+                    type: integer
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /groups:
+    post:
+      summary: Создать новую группу
+      description: Создает новую группу с указанным именем
+      tags:
+        - groups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group_name:
+                  type: string
+      responses:
+        "201":
+          description: Группа успешно создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  group_id:
+                    type: integer
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /quest:
+    post:
+      summary: Создать новую задачу
+      description: Создает новую задачу с переданными данными
+      tags:
+        - Quests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Quest"
+      parameters:
+        - name: Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Задача успешно создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quest_id:
+                    type: integer
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    get:
+      summary: Получить список задач
+      description: Возвращает список всех задач
+      tags:
+        - Quests
+      responses:
+        "200":
+          description: Список задач успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Quest"
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /quest/hot:
+    post:
+      summary: Создать горящую задачу
+      description: Модифицирует задачу в Горящую с переданными данными
+      tags:
+        - Quests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotQest"
+      responses:
+        "201":
+          description: Горящая задача успешно создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  hot_task:
+                    $ref: "#/components/schemas/HotQest"
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /quest-complite:
+    post:
+      summary: Пометить задачу как выполненную
+      description: Помечает задачу как выполненную
+      tags:
+        - Quests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quest_id:
+                  type: integer
+      parameters:
+        - name: Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Задача успешно помечена как выполненная
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  pr:
+                    type: number
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "403":
+          description: Недостаточно прав для изменения задачи
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /purpose-qests:
+    put:
+      summary: Обновить назначение задачи
+      description: Обновляет назначение задачи на текущего пользователя
+      tags:
+        - Quests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quest_id:
+                  type: integer
+      parameters:
+        - name: Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Назначение успешно обновлено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "403":
+          description: Недостаточно прав для изменения задачи или недостаточно навыков
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /learn:
+    post:
+      summary: Создать новую запись обучения
+      description: Создает новую запись обучения с указанным скиллом
+      tags:
+        - Learning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Learning"
+      responses:
+        "200":
+          description: Запись успешно добавлена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Некорректный запрос или указанный скилл не существует
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    get:
+      summary: Получить все обучения
+      description: Возвращает список всех обучений
+      tags:
+        - Learning
+      responses:
+        "200":
+          description: Список обучений успешно получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Learning"
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /learn/{id}:
+    put:
+      summary: Обновить заголовок обучения
+      description: Обновляет заголовок обучения по указанному идентификатору
+      tags:
+        - Learning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                learn_title:
+                  type: string
+      responses:
+        "200":
+          description: Заголовок обучения успешно обновлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Некорректный запрос или заголовок обучения не может быть пустым
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    get:
+      summary: Получить обучение по идентификатору
+      description: Возвращает обучение по указанному идентификатору
+      tags:
+        - Learning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Обучение успешно получено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learning"
+        "400":
+          description: Некорректный запрос или неверный формат идентификатора обучения
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Обучение с указанным идентификатором не найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    delete:
+      summary: Удалить обучение по идентификатору
+      description: Удаляет обучение по указанному идентификатору
+      tags:
+        - Learning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Обучение успешно удалено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Некорректный запрос или неверный формат идентификатора обучения
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Обучение с указанным идентификатором не найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /add-skill-from-learning:
+    post:
+      summary: Добавить скилл сотруднику из обучения
+      description: Добавляет скилл сотруднику на основе обучения
+      tags:
+        - User
+      parameters:
+        - name: Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                learning_id:
+                  type: integer
+      responses:
+        "200":
+          description: Скилл успешно добавлен сотруднику из обучения
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Некорректный запрос или обучение с указанным идентификатором не найдено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /skills:
+    post:
+      summary: Создать новый навык
+      description: Создает новый навык с указанным именем
+      tags:
+        - skills
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Skills"
+      responses:
+        "201":
+          description: Навык успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skills"
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: Получить список всех навыков
+      description: Возвращает список всех навыков
+      tags:
+        - skills
+      responses:
+        "200":
+          description: Список навыков успешно получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  skills:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Skills"
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - first_name
+        - last_name
+        - division_id
+        - group_id
+        - skill_tasks
+        - login
+        - password
+        - role
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        middle_name:
+          type: string
+        division_id:
+          type: integer
+        group_id:
+          type: integer
+        skill_tasks:
+          type: array
+          items:
+            type: integer
+        login:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+    LoginRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+    AssignedQuestWithTaskInfo:
+      type: object
+      properties:
+        ID:
+          type: integer
+        AssigneeID:
+          type: integer
+        QuestID:
+          type: integer
+        RecurrenceLimit:
+          type: integer
+        CreationTimestamp:
+          type: string
+          format: date-time
+        ClosingTimestamp:
+          type: string
+          format: date-time
+        Done:
+          type: boolean
+        QuestsType:
+          type: string
+        Title:
+          type: string
+        Description:
+          type: string
+        Deadline:
+          type: string
+          format: date-time
+        Cost:
+          type: integer
+        Priority:
+          type: integer
+        SkillsRequired:
+          type: array
+          items:
+            type: integer
+    Quest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+        cost:
+          type: integer
+        priority:
+          type: integer
+        recurrence_limit:
+          type: integer
+        skills_required:
+          type: array
+          items:
+            type: integer
+    HotQest:
+      type: object
+      properties:
+        id:
+          type: integer
+        assignee_quest_id:
+          type: integer
+        creation_time:
+          type: string
+          format: date-time
+        hot:
+          type: number
+          format: float
+          description: "коэффициент множителя"
+        end_time:
+          type: string
+          format: date-time
+        fire:
+          type: boolean
+    Questt:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+        creator_id:
+          type: integer
+        cost:
+          type: integer
+        priority:
+          type: integer
+        skills_required:
+          type: array
+          items:
+            type: integer
+        recurrence_limit:
+          type: integer
+        assigned_quests:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssignedQuest"
+    AssignedQuest:
+      type: object
+      properties:
+        id:
+          type: integer
+        assignee_id:
+          type: integer
+        quest_id:
+          type: integer
+        recurrence_limit:
+          type: integer
+        creation_timestamp:
+          type: string
+          format: date-time
+        closing_timestamp:
+          type: string
+          format: date-time
+        done:
+          type: boolean
+    Learning:
+      type: object
+      properties:
+        id:
+          type: integer
+        learn_title:
+          type: string
+        skill:
+          type: integer
+    Skills:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - name
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

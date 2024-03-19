@@ -1,48 +1,60 @@
-// main.go
-
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 
-	"./api/handlers" // замените "yourproject" на путь к вашему пакету обработчиков
-
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
+	"github.com/7t1cker/bp/api/handlers"
+	"github.com/7t1cker/bp/api/handlers/handlers_learn"
+	"github.com/7t1cker/bp/api/handlers/handlers_qests"
+	"github.com/7t1cker/bp/api/handlers/handlers_skills"
+	"github.com/7t1cker/bp/api/handlers/handlers_user"
+	"github.com/7t1cker/bp/api/handlers/hot_qests"
+	"github.com/7t1cker/bp/db"
+	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-    // Загрузка переменных окружения из файла .env
-    err := godotenv.Load()
+    db, err := db.Connect()
     if err != nil {
-        log.Fatalf("Error loading .env file: %v", err)
-    }
-
-    // Получение данных для подключения к базе данных из переменных окружения
-    dbHost := os.Getenv("DB_HOST")
-    dbPort := os.Getenv("DB_PORT")
-    dbUser := os.Getenv("DB_USER")
-    dbPassword := os.Getenv("DB_PASSWORD")
-    dbName := os.Getenv("DB_NAME")
-
-    // Формирование строки подключения
-    dbURI := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
-
-    // Подключение к базе данных
-    db, err := sql.Open("postgres", dbURI)
-    if err != nil {
-        log.Fatalf("Failed to connect to database: %v", err)
+        log.Fatalf("failed to connect to database: %v", err)
     }
     defer db.Close()
 
-    r := mux.NewRouter()
+    r := gin.Default()
 
     // User routes
-    r.HandleFunc("/api/v2/add", handlers.CreateUser(db)).Methods("POST")
+    r.POST("/api/v2/users", handlers_user.CreateUser(db))//+
+	r.POST("/api/v2/add-skill-from-learning", handlers_user.AddSkillFromLearning(db))//
+    r.POST("/api/v2/login", handlers_user.Login(db))//+
+    r.POST("/api/v2/logout", handlers_user.Logout(db))//+
+	r.GET("/api/v2/users/:user_id/assigned_quests", handlers_user.GetAssignedQuests(db))//+
+	r.GET("/api/v2/user", handlers_user.KL(db))//+
+    // Division, Group  routes
+    r.POST("/api/v2/divisions", handlers.CreateDivisions(db))//+
+    r.POST("/api/v2/groups", handlers.CreateGroups(db))//+
+    
+
+    // Quest routes
+    r.POST("/api/v2/quest", handlers_qests.CreateQuest(db))//+
+    r.POST("/api/v2/quest/hot", hot_qests.CreateHotTask(db))//+
+    r.POST("/api/v2/quest-complite", handlers_qests.MarkQuestAsDone(db))//+
+    r.PUT("/api/v2/purpose-qests", handlers_qests.UpdateAssignee(db))//+
+    r.GET("/api/v2/quest", handlers_qests.GetQests(db))//+
+
+    // Learn routes
+    r.POST("/api/v2/learn", handlers_learn.CreateLearn(db))//+
+    r.PUT("/api/v2/learn/:id", handlers_learn.UpdateLearnTitle(db))//+
+	r.GET("/api/v2/learn", handlers_learn.GetAllLearnings(db))//+
+	r.GET("/api/v2/learn/:id", handlers_learn.GetLearningByID(db))//+
+	r.DELETE("/api/v2/learn/:id", handlers_learn.DeleteLearning(db))//+
+	
+
+    // Skill routes
+	r.POST("/api/v2/skills", handlers_skills.CreateSkills(db))//+
+    r.GET("/api/v2/skills", handlers_skills.GetAllSkills(db))//+
+	
 
     // Start server
     log.Println("Server is running on port 8000")
